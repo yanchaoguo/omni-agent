@@ -32,14 +32,20 @@
 git clone https://github.com/yanchaoguo/omni-agent.git
 cd omni-agent
 
-# 2. 配置模型（任选其一）
+# 2. 配置模型（必填）
 export HAISNAP_API_KEY="sk-你的密钥"
 export HAISNAP_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
 export HAISNAP_MODEL="qwen3-max"
 
-# 3. 启动交互式终端
+# 3. 配置联网工具（可选，但强烈建议——否则 web_search 降级为直连抓取）
+export HAISNAP_UNIFUNCS_BASE="https://api.unifuncs.com/api"
+export HAISNAP_UNIFUNCS_KEY="your-unifuncs-key"
+
+# 4. 启动交互式终端
 python -m omni_agent
 ```
+
+> 全部 40 个环境变量见下方[配置](#配置)章节。除 `HAISNAP_API_KEY` 外均有默认值，最小配置即可跑通。
 
 ### 三种运行方式
 
@@ -122,20 +128,105 @@ python -m omni_agent schedule status    # 查看全部任务进度
 
 配置按 **环境变量 > 项目 `.haisnap/settings.json` > 全局 `~/.haisnap/settings.json` > 代码内置默认值** 的顺序逐层回退，任何一层都可以省略。
 
-### 常用环境变量
+所有配置项都有内置默认值，**最小可用配置只需 `HAISNAP_API_KEY`**（或通过 Web 界面 / `settings.json` 填入）。
+
+### 模型接入
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `HAISNAP_API_KEY` | *(空)* | 模型 API 密钥 |
+| `HAISNAP_API_KEY` | *(空)* | 主模型 API 密钥，**唯一必填项** |
 | `HAISNAP_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI 兼容端点 |
-| `HAISNAP_MODEL` | `qwen3-max` | 主模型 |
-| `HAISNAP_VISION_MODEL` | `qwen-vl-max` | 视觉模型（留空继承主模型） |
-| `HAISNAP_THINKING` | `on` | 是否开启思考模式 |
-| `HAISNAP_MAX_TURNS` | `500` | 单任务最大工具调用轮数 |
-| `HAISNAP_BASH_TIMEOUT` | `120` | 命令执行超时（秒） |
-| `HAISNAP_HOME` | `~/.haisnap` | 全局配置与项目根目录 |
+| `HAISNAP_MODEL` | `qwen3-max` | 主模型名称 |
+| `HAISNAP_VISION_MODEL` | `qwen-vl-max` | 视觉模型（用于 `vision` 工具） |
+| `HAISNAP_VISION_API_KEY` | *(空)* | 视觉模型独立密钥，留空继承主模型 |
+| `HAISNAP_VISION_BASE_URL` | *(空)* | 视觉模型独立端点，留空继承主模型 |
 
-完整变量清单见 `omni_agent/config.py`。
+### 联网工具（搜索与网页阅读）
+
+`web_search` / `web_fetch` 走 UniFuncs 聚合通道。**不配置也能用**——此时自动降级为直连抓取，但搜索质量与反爬能力会下降。
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_UNIFUNCS_BASE` | `https://api.unifuncs.com/api` | 联网工具服务端点 |
+| `HAISNAP_UNIFUNCS_KEY` | *(空)* | 联网工具 API 密钥，留空则降级为直连模式 |
+| `HAISNAP_WEB_FETCH_TIMEOUT` | `30` | 网页抓取超时（秒），单次调用可覆盖 |
+| `HAISNAP_UA` | Chrome 131 UA | 请求 User-Agent（默认去除 Agent 标识以规避站点 403） |
+
+```bash
+# 启用完整联网能力
+export HAISNAP_UNIFUNCS_BASE="https://api.unifuncs.com/api"
+export HAISNAP_UNIFUNCS_KEY="your-unifuncs-key"
+```
+
+### 备用模型与智能路由
+
+主模型不可用时自动故障转移；路由按请求特征选择专用模型（槽位留空即回退主模型，无副作用）。
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_FALLBACK_MODEL` | *(空)* | 备用模型，非空即启用主备转移 |
+| `HAISNAP_FALLBACK_API_KEY` | *(空)* | 备用模型密钥，留空继承主模型 |
+| `HAISNAP_FALLBACK_BASE_URL` | *(空)* | 备用模型端点，留空继承主模型 |
+| `HAISNAP_ROUTING` | `true` | 是否启用多模型智能路由 |
+| `HAISNAP_ROUTING_LIGHT` | *(空)* | 轻量任务模型（内部调用、简单改写） |
+| `HAISNAP_ROUTING_CODE` | *(空)* | 代码任务模型 |
+| `HAISNAP_ROUTING_LONG` | *(空)* | 超长上下文任务模型 |
+| `HAISNAP_ROUTING_LONG_TOKENS` | `30000` | 触发长上下文路由的 token 阈值 |
+
+### Agent 行为
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_THINKING` | `on` | 思考模式。设 `off`/`false`/`0` 可关闭 |
+| `HAISNAP_MAX_TURNS` | `500` | 单任务最大工具调用轮数 |
+| `HAISNAP_BASH_TIMEOUT` | `120` | shell 命令执行超时（秒） |
+| `HAISNAP_MAX_TOOL_OUTPUT` | `12000` | 工具输出截断长度（字符） |
+| `HAISNAP_MAX_FILE_READ` | `60000` | 单文件读取截断长度（字符） |
+| `HAISNAP_ASK_TIMEOUT` | `120` | `ask_user_question` 倒计时确认（秒） |
+| `HAISNAP_PROMPT_CACHE` | `auto` | Prompt 缓存：`auto`（仅 Claude 启用）/ `on` / `off` |
+| `HAISNAP_PROMPT_CACHE_TTL` | `5m` | 缓存有效期，`5m` 或 `1h` |
+
+### 失败自愈
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_REFLEXION` | `true` | 是否启用 Reflexion 自愈引擎 |
+| `HAISNAP_REFLEXION_THRESHOLD` | `2` | 连续失败达到该次数即触发归因 |
+
+### 浏览器与图像
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_BROWSER_HEADED` | `true` | 优先使用可见浏览器实例（便于登录）；`false` 直接走无头 |
+| `HAISNAP_IMAGE_MODEL` | `qwen-image-plus` | 图像生成模型 |
+| `HAISNAP_IMAGE_WORKERS` | `6` | 批量图像生成并行度 |
+
+### 目录与日志
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `HAISNAP_HOME` | `~/.haisnap` | 全局配置目录（含 `env.json`、快照、调度状态） |
+| `HAISNAP_PROJECTS_ROOT` | `~/.haisnap/haisnap_projects` | 自动创建的项目工作目录根 |
+| `HAISNAP_LOG_LEVEL` | `INFO` | 日志级别 |
+| `HAISNAP_LOG_CONSOLE` | *(空)* | 设 `on`/`1`/`true` 时日志同时输出到控制台 |
+
+### 用户级环境变量持久化
+
+除 `export` 外，还可以把变量写入 `~/.haisnap/env.json`，启动时自动加载（**同名覆盖进程环境变量**）：
+
+```json
+{
+  "HAISNAP_API_KEY": "sk-xxx",
+  "HAISNAP_MODEL": "qwen3-max",
+  "HAISNAP_UNIFUNCS_KEY": "your-unifuncs-key"
+}
+```
+
+Web 驾驶舱的配置面板也支持修改，改动会持久化到该文件，重启后仍生效。
+
+### Hooks（工具调用钩子）
+
+`settings.json` 的 `hooks` 段可在工具调用前后执行自定义命令，通过环境变量读取上下文：`HAISNAP_TOOL`（工具名）、`HAISNAP_EVENT`（事件类型）、`HAISNAP_PAYLOAD` / `HAISNAP_PAYLOAD_Q`（调用参数）。钩子返回码 `2` 会阻止该次工具调用。
 
 ### 安全门控
 
