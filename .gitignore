@@ -1,0 +1,49 @@
+# ── 虚拟环境 ──
+.venv/
+venv/
+env/
+ENV/
+
+# ── Python 缓存与构建产物 ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── 打包产物 ──
+*.exe
+*.app
+*.dmg
+*.pkg
+
+# ── 运行时生成(含会话/快照/日志/用户配置) ──
+.haisnap/
+haisnap_projects/
+*.log
+logs/
+
+# ── 用户级密钥与本地配置(严禁入库) ──
+env.json
+*.env
+.env
+.env.*
+secrets.json
+*.pem
+*.key
+
+# ── 编辑器与系统 ──
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── 测试与覆盖率 ──
+.pytest_cache/
+.coverage
+htmlcov/

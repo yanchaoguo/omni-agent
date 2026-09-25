@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "_comment": "omni-agent 全局全量默认配置文件 v4.0.0 — 放置于 .haisnap/settings.json (全局) 或 .haisnap/settings.json (项目级)",
+    "_doc": "项目级配置覆盖全局配置。所有键均可安全省略, 省略时回退到 config.py 内置默认值。",
+    "_env_override": "API_KEY / BASE_URL / MODEL / VISION_MODEL 优先读取环境变量 HAISNAP_*",
+    "version": "4.0.0",
+    "_priority": "加载优先级: 环境变量 > 项目 .haisnap/settings.json > 全局 .haisnap/settings.json > config.py 内置默认"
+  },
+    "model": {
+    "_comment": "模型接入配置。env 优先: HAISNAP_API_KEY / HAISNAP_BASE_URL / HAISNAP_MODEL / HAISNAP_VISION_MODEL(视觉理解, 默认 qwen-vl-max)",
+    "api_key": "",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model": "qwen3.7-max",
+    "vision_model": "qwen3.7-plus",
+    "fallback_model": "",
+    "fallback_api_key": "",
+    "fallback_base_url": "",
+    "_fallback_comment": "v7.1 备用语言模型: fallback_model 非空即启用主备故障转移; key/url 留空继承主模型 (env: HAISNAP_FALLBACK_MODEL / HAISNAP_FALLBACK_API_KEY / HAISNAP_FALLBACK_BASE_URL)",
+    "routing": {
+      "_comment": "v9.0 多模智能路由: 按请求特征自动选择最优模型(内部调用→light / 代码任务→code / 超长上下文→long), 槽位留空自动回退主模型 (env: HAISNAP_ROUTING / HAISNAP_ROUTING_LIGHT / HAISNAP_ROUTING_CODE / HAISNAP_ROUTING_LONG / HAISNAP_ROUTING_LONG_TOKENS)",
+      "enabled": true,
+      "light_model": "",
+      "code_model": "",
+      "long_model": "",
+      "long_context_tokens": 30000
+    },
+    "pool": [],
+    "_pool_comment": "模型池(模型管理): 通过 Web 配置面板登记, 持久化于 ~/.haisnap/model_pool.json; 也可在此声明 [{name, base_url, api_key}], 端点留空继承全局默认"
+  },
+  "thinking": true,
+  "_thinking_comment": "是否开启 LLM 思考(thinking)模式, 优先级: env HAISNAP_THINKING > settings.json > CLI --no-thinking | 默认 true(支持思考), false 仅手动关闭时使用",
+  "agent": {
+    "_comment": "Agent 行为参数",
+    "max_turns": 40,
+    "bash_timeout": 120,
+    "max_tool_output": 12000,
+    "max_file_read": 60000,
+    "ask_default_timeout": 120,
+    "web_fetch_timeout": 30
+  },
+  "context": {
+    "_comment": "上下文压缩与记忆管理",
+    "compress_trigger_tokens": 45000,
+    "keep_tail_msgs": 6,
+    "max_error_memory": 8,
+    "lesson_merge_sim": 0.6,
+    "lesson_ttl_days": 30,
+    "error_markers": [
+      "[错误]",
+      "[失败]",
+      "[超时]",
+      "[工具执行异常]",
+      "[已拒绝]",
+      "[被 PreToolUse hook 阻止]",
+      "Traceback (most recent call last)"
+    ]
+  },
+  "checkpoint": {
+    "_comment": "快照管理: 自动检查点 + 手动切换",
+    "auto_save_interval_turns": 10,
+    "max_snapshots": 50,
+    "cleanup_on_exit": true
+  },
+  "hooks": {
+    "_comment": "PreToolUse / PostToolUse 钩子。matcher 支持通配符(* 匹配全部, mcp__* 匹配全部 MCP 工具)。exit code 2 = 阻止调用",
+    "pre_tool_use": [
+      {
+        "matcher": "*",
+        "command": "echo '[PreToolUse] tool=$HAISNAP_TOOL' >> .haisnap/hooks.log"
+      }
+    ],
+    "post_tool_use": [
+      {
+        "matcher": "*",
+        "command": "echo '[PostToolUse] tool=$HAISNAP_TOOL' >> .haisnap/hooks.log"
+      }
+    ]
+  },
+  "mcp_servers": {
+    "_comment": "MCP Server 配置: stdio(command/args/env) | http(transport=http,url,headers) | sse(transport=sse,url,headers)。工具命名为 mcp__<server>__<tool>",
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/mcp-filesystem",
+        "/tmp"
+      ],
+      "env": {}
+    }
+  },
+  "connectors": {
+    "_comment": "外部连接器: 推送交付物。可用 channel: feishu / wecom / webhook / email",
+    "feishu": {
+      "url": ""
+    },
+    "wecom": {
+      "url": ""
+    },
+    "webhook": {
+      "url": ""
+    },
+    "email": {
+      "smtp_host": "smtp.example.com",
+      "smtp_port": 465,
+      "user": "",
+      "password": "",
+      "to": ""
+    }
+  },
+  "scheduler": {
+    "_comment": "定时任务调度器",
+    "schedule_file": "",
+    "_schedule_file_default": ".haisnap/schedule.json",
+    "heartbeat_sec": 5,
+    "stale_sec": 30
+  },
+  "tool_policy": {
+    "_comment": "run_task 工具黑白名单: deny 优先级最高; allow 非空时仅允许 白名单+核心工具; mode=auto 按任务类型自动匹配预设工具集",
+    "mode": "manual",
+    "allow": [],
+    "deny": [],
+    "task_type": ""
+  },
+  "permission": {
+    "_comment": "权限审批门控: allow(自动放行) / confirm(询问) / deny(拒绝)",
+    "yolo": false,
+    "headless": false,
+    "safe_prefixes": [
+      "ls",
+      "cat",
+      "head",
+      "tail",
+      "pwd",
+      "echo",
+      "grep",
+      "find",
+      "wc",
+      "which",
+      "whoami",
+      "date",
+      "df",
+      "du",
+      "ps",
+      "env",
+      "uname",
+      "stat",
+      "file",
+      "diff",
+      "python3 --version",
+      "python --version",
+      "pip list",
+      "pip show",
+      "node -v",
+      "git status",
+      "git log",
+      "git diff",
+      "git branch",
+      "git show",
+      "tree",
+      "sort",
+      "uniq"
+    ],
+    "deny_patterns": [
+      "\\brm\\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\\s+[/~]",
+      "\\bmkfs\\b",
+      "\\bdd\\s+if=.*of=/dev/",
+      ":\\(\\)\\{.*\\};:",
+      "\\bshutdown\\b",
+      "\\breboot\\b",
+      ">\\s*/dev/sd"
+    ],
+    "confirm_keywords": [
+      "rm ",
+      "sudo",
+      "mv ",
+      "chmod",
+      "chown",
+      "kill",
+      "pkill",
+      "curl",
+      "wget",
+      "pip install",
+      "pip3 install",
+      "npm install",
+      "git push",
+      "git reset",
+      "git checkout",
+      "docker",
+      "apt",
+      "yum",
+      "brew "
+    ]
+  },
+  "paths": {
+    "_comment": "目录与文件路径",
+    "memory_file": "HAISNAP.md",
+    "settings_dir": ".haisnap",
+    "global_dir": "./.haisnap",
+    "skip_dirs": [
+      ".git",
+      "node_modules",
+      "__pycache__",
+      ".venv",
+      "venv",
+      ".haisnap",
+      "dist",
+      "build"
+    ]
+  },
+  "browser": {
+    "_comment": "浏览器模块配置",
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36 omni-agent/3.2.0",
+    "timeout": 30,
+    "max_results": 10
+  },
+  "reflexion": {
+    "_comment": "v5.9 Reflexion 自愈反思引擎: 连续工具失败达到阈值时自动LLM归因并注入纠偏策略(env: HAISNAP_REFLEXION / HAISNAP_REFLEXION_THRESHOLD)",
+    "enabled": true,
+    "error_threshold": 2
+  },
+  "unifuncs": {
+    "_comment": "UniFuncs 聚合搜索/网页阅读(env: HAISNAP_UNIFUNCS_KEY / HAISNAP_UNIFUNCS_BASE)",
+    "api_key": "",
+    "base": "https://api.unifuncs.com/api"
+  },
+  "image": {
+    "_comment": "图像生成(env: HAISNAP_IMAGE_MODEL / HAISNAP_IMAGE_WORKERS)",
+    "model": "qwen-image-plus",
+    "batch_workers": 6
+  },
+  "prompt_cache": {
+    "_comment": "Claude Prompt Caching(env: HAISNAP_PROMPT_CACHE / HAISNAP_PROMPT_CACHE_TTL)",
+    "mode": "auto",
+    "ttl": "5m"
+  }
+}
