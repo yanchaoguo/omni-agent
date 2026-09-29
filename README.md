@@ -1,12 +1,6 @@
-# omni-agent
 
-> **一个纯标准库实现的本地终端智能体框架** —— 零第三方依赖，自带 Web UI、技能系统、MCP 接入与定时调度。
-
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
-
----
+> **一个纯标准库实现的本地终端智能体框架** —— 零第三方依赖，自带 Web UI、记忆系统、技能系统、工具接入与定时调度。
+ 
 
 ## 这是什么
 
@@ -32,7 +26,7 @@
 git clone https://github.com/yanchaoguo/omni-agent.git
 cd omni-agent
 
-# 2. 配置模型（必填）
+# 2. 配置模型（可选）
 export HAISNAP_API_KEY="sk-你的密钥"
 export HAISNAP_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
 export HAISNAP_MODEL="qwen3-max"
@@ -42,7 +36,8 @@ export HAISNAP_UNIFUNCS_BASE="https://api.unifuncs.com/api"
 export HAISNAP_UNIFUNCS_KEY="your-unifuncs-key"
 
 # 4. 启动交互式终端
-python -m omni_agent
+python launcher.py
+
 ```
 
 ### 三种运行方式
@@ -59,6 +54,7 @@ python -m omni_agent web --port 3000
 ```
 
 启动 Web 版后打开 `http://localhost:3000`，可以看到对话流、工具调用树、任务清单与快照管理界面。
+![](https://upload-images.jianshu.io/upload_images/17243194-22e6f41a18d4d2d7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ---
 
